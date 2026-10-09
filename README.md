@@ -133,3 +133,29 @@ go test -run '^$' -bench . -benchmem -count 6 .
 go vet ./...
 go test ./...
 ```
+
+## 今後の展望
+
+`golang.org/x/xerrors` への依存をなくす予定です。xerrors を使っている箇所を、次のように標準ライブラリだけを使う実装に書き換えます。
+
+### 実装計画
+
+1. 発生箇所の記録に `runtime.Callers` を使う
+   - `New` / `Errorf` / `Join` の `xerrors.Caller(1)`（3か所）を、`runtime.Callers` で呼び出し元のプログラムカウンタを1つ記録する処理に置き換える
+   - `xerrors.Frame` 型のフィールドと引数（`fundamental` / `wrapError` / `wrapErrors` / `joinError` の `frame`、`withFrame` の引数）を、自前の型に置き換える
+2. 発生箇所の表示に `runtime.CallersFrames` を使う
+   - `xerrors.Frame` の `Format` で出していた関数名・ファイル名・行番号を、`runtime.CallersFrames` で求めて同じ形式で出力する
+3. `%+v` の出力を自前で実装する
+   - `format` の中の `xerrors.FormatError` と引数の `xerrors.Formatter` を、ラップの連鎖をたどって出力する自前の処理に置き換える
+   - 各型の `FormatError` と `printChildren` が受け取る `xerrors.Printer` を、自前の出力先に置き換える。子のエラーの `  - ` の字下げと `[0]`, `[1]`, ... の番号は今と同じ形式で出す
+   - `xerrors.Formatter` を実装した他のライブラリのエラーは、詳細なしでメッセージだけを出すようになる
+4. 依存を削除する
+   - `go.mod` から `golang.org/x/xerrors` を外し、`go mod tidy` を実行する
+   - `bench/caller_test.go` の比較対象から `xerrors.Caller` を外し、`bench/go.mod` からも依存を削除する
+5. 動作を確認する
+   - `%+v` の出力が変わらないことを既存のテスト（`TestStackTrace` / `TestStackTraceMulti` / `TestStackTraceLine` / `TestStackTraceBranchIndex`）で確かめる
+   - `bench/` でベンチマークを測り直し、「パフォーマンス」の表を更新する
+6. 説明を更新する
+   - `errors.go` のパッケージコメントと、README の冒頭の依存の項目、「xerrors の使い方」の節を書き改める
+
+番兵エラー（`var ErrX = errors.New(...)`）の定義行が `%+v` で分からない点は、この書き換えでは変わりません。`New` がパッケージ初期化にインライン展開されると、記録する時点で位置の情報が失われているためです。
