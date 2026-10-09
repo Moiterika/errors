@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	crdb "github.com/cockroachdb/errors"
 	myerr "github.com/Moiterika/errors"
+	crdb "github.com/cockroachdb/errors"
 )
 
 // 比較対象ごとの API。いずれも標準と同じ形の関数だけを使う。

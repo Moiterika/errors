@@ -4,6 +4,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"io/fs"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -115,6 +116,57 @@ func TestStackTrace(t *testing.T) {
 	// 外側のメッセージが内側のメッセージを重複して含まないこと。
 	if n := strings.Count(got, "root cause"); n != 1 {
 		t.Errorf("\"root cause\" の出現回数 = %d, want 1", n)
+	}
+}
+
+// line は呼び出した行の行番号を返す。
+func line() int {
+	_, _, l, _ := runtime.Caller(1)
+	return l
+}
+
+// 記録した位置が New / Errorf / Join を呼んだ行と一致すること。
+func TestStackTraceLine(t *testing.T) {
+	check := func(name string, err error, line int) {
+		t.Helper()
+		got := fmt.Sprintf("%+v", err)
+		// 行番号の後ろの改行は、「:13」が「:130」に一致しないようにするため。最後の行には改行がないので補う。
+		if want := fmt.Sprintf("errors_test.go:%d\n", line); !strings.Contains(got+"\n", want) {
+			t.Errorf("%s: %%+v に %q が含まれない:\n%s", name, want, got)
+		}
+	}
+
+	err, l := errors.New("new"), line()
+	check("New", err, l)
+	err, l = errors.Errorf("errorf: %w", errSentinel), line()
+	check("Errorf", err, l)
+	err, l = errors.Join(errSentinel), line()
+	check("Join", err, l)
+}
+
+// Join と複数の %w では、枝ごとに [0], [1], ... の番号が付くこと。
+func TestStackTraceBranchIndex(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want []string // 出力に現れる順
+	}{
+		{"Join", errors.Join(errors.New("first"), errors.New("second")), []string{"[0] first", "[1] second"}},
+		{"Errorf multi %w", errors.Errorf("%w and %w", errors.New("a"), errors.New("b")), []string{"[0] a", "[1] b"}},
+		{"nested Join", errors.Join(errors.New("x"), errors.Join(errors.New("y"))), []string{"[0] x", "[1] joined errors", "[0] y"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := fmt.Sprintf("%+v", tt.err)
+			rest := got
+			for _, w := range tt.want {
+				i := strings.Index(rest, w)
+				if i < 0 {
+					t.Fatalf("%%+v に %q が順番どおりに含まれない:\n%s", w, got)
+				}
+				rest = rest[i+len(w):]
+			}
+		})
 	}
 }
 

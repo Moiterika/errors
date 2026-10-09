@@ -1,0 +1,7 @@
+# リポジトリには LF で保存する。作業ツリーの改行は各自の core.autocrlf に従う。
+* text=auto
+
+# gofmt と go mod は LF で書き出すので、作業ツリーでも LF にする。
+*.go   text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf

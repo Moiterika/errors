@@ -7,17 +7,10 @@
 - `%+v` で書式化すると、ラップの連鎖をたどって各エラーの発生箇所を出力
 - 依存は `golang.org/x/xerrors` のみ。xerrors の非推奨関数は使わず、公開もしない
 
-## インストール
-
-```sh
-go get github.com/Moiterika/errors
-```
-
-`AsType` を使うため、Go 1.26 以上が必要です。
-
 ## 使い方
 
 標準の `errors` の import をこのパッケージに差し替え、`fmt.Errorf` を `errors.Errorf` に置き換えます。
+`AsType` を使うため、Go 1.26 以上が必要です。
 
 ```go
 import "github.com/Moiterika/errors"
@@ -89,7 +82,7 @@ load user 42:
 
 - エラーは `errors.New` で作り、`errors.Errorf("...: %w", err)` でラップする。`fmt.Errorf` は発生箇所を記録しないので使わない。`pkg/errors` も使わない。
 - 外部ライブラリから返ったエラーは、受け取った箇所で `Errorf` でラップする。外部ライブラリのエラーには発生箇所が記録されていないので、ラップした箇所が `%+v` に残る唯一の手がかりになる。
-- 番兵エラー（`var ErrX = errors.New(...)`）を `%+v` で出すと、発生箇所としてパッケージ初期化時の定義箇所が出る。返すときに `Errorf("...: %w", ErrX)` で包めば、実際に返した箇所が残る。
+- 番兵エラー（`var ErrX = errors.New(...)`）を `%+v` で出しても、定義した行は分からない（パッケージ初期化の `init` と出るだけ）。返すときに `Errorf("...: %w", ErrX)` で包めば、実際に返した箇所が残る。
 - エラーの比較には `==` ではなく `errors.Is` / `errors.As` / `errors.AsType` を使う。ラップしたエラーは元のエラーと別の値なので、`==` では一致しない。
 - ログには `%+v` で出す。利用者に見せるメッセージには `Error()` か `%v` を使う。
 
@@ -112,7 +105,7 @@ xerrors で非推奨になっているのは `Is` / `As` / `Unwrap` だけです
 
 ## パフォーマンス
 
-標準（`errors` / `fmt.Errorf`）と `cockroachdb/errors` と比べた結果です。Go 1.26.4、Intel Core i5-12400F で各6回計測した中央値を示します。
+このパッケージを、標準（`errors` / `fmt.Errorf`）および `cockroachdb/errors` と比べた結果です。パフォーマンス指標とした`cockroachdb/errors` の出典は [github.com/cockroachdb/errors](https://github.com/cockroachdb/errors)（v1.14.0、[Apache License 2.0](https://github.com/cockroachdb/errors/blob/v1.14.0/LICENSE)）です。Go 1.26.4、Intel Core i5-12400F で各6回計測した中央値を示します。
 
 | 処理 | 標準 | このパッケージ | cockroachdb/errors |
 |---|---|---|---|
