@@ -148,6 +148,9 @@ func hasFlagOrWidth(s fmt.State) bool {
 
 // formatDetail はラップの連鎖をたどり、各エラーのメッセージと発生箇所を出力する。
 // 出力の形式は xerrors.FormatError の %+v と同じ。
+//
+// golang.org/x/xerrors の adaptor.go の FormatError をもとにしている。
+// Copyright 2018 The Go Authors. ライセンスは CREDITS を参照。
 func formatDetail(f formatter, s fmt.State) {
 	p := &printer{State: s}
 	var err error = f
@@ -188,6 +191,9 @@ loop:
 // printer は %+v の出力をためる。xerrors の Printer と同じ規則で、
 // メッセージの後に ":" を付け、詳細(発生箇所)の各行を字下げする。
 // 他のライブラリのエラーの Format に渡すため、fmt.State も満たす。
+//
+// golang.org/x/xerrors の adaptor.go の state / printer をもとにしている。
+// Copyright 2018 The Go Authors. ライセンスは CREDITS を参照。
 type printer struct {
 	fmt.State
 	buf bytes.Buffer
