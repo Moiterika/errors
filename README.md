@@ -111,7 +111,7 @@ load user 42:
 このパッケージを、標準（`errors` / `fmt.Errorf`）および `cockroachdb/errors` と比べた結果です。パフォーマンス指標とした`cockroachdb/errors` の出典は [github.com/cockroachdb/errors](https://github.com/cockroachdb/errors)（v1.14.0、[Apache License 2.0](https://github.com/cockroachdb/errors/blob/v1.14.0/LICENSE)）です。Go 1.26.4、Intel Core i5-12400F で各6回計測した中央値を示します。
 
 | 処理 | 標準 | このパッケージ | cockroachdb/errors |
-|---|---|---|---|
+|---|---:|---:|---:|
 | `New` | 17 ns / 1 alloc | 115 ns / 1 alloc | 538 ns / 7 allocs |
 | `Errorf("...: %w")` | 144 ns / 3 allocs | 316 ns / 4 allocs | 1,776 ns / 19 allocs |
 | 5段ラップしたエラーを作る | 1.0 µs | 1.9 µs | 23.7 µs |
